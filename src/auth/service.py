@@ -1,14 +1,14 @@
 """
-auth.py
-───────
-Responsabilidade: autenticação e controle de sessão.
+src/auth/service.py
+───────────────────
+Responsabilidade exclusiva: autenticação e controle de sessão.
 
-Não importa nada do dashboard. Não renderiza CSS do dashboard.
-Expõe apenas 3 funções públicas usadas pelo main.py:
+Não conhece o dashboard. Não renderiza CSS do dashboard.
+Interface pública (consumida via src/auth/__init__.py):
 
     require_login()        → guard: para execução se não autenticado
     render_logout_button() → widget de logout na sidebar
-    get_current_user()     → dicionário com dados do usuário logado
+    get_current_user()     → dict com dados do usuário logado
 """
 
 import hashlib
@@ -18,13 +18,13 @@ import time
 import streamlit as st
 
 # ── Configurações ─────────────────────────────────────────────────────────────
-SESSION_TIMEOUT_MIN = 30   # minutos de inatividade antes do logout automático
-MAX_ATTEMPTS        = 5    # tentativas de login antes do bloqueio
-LOCKOUT_SECONDS     = 300  # duração do bloqueio (5 min)
+SESSION_TIMEOUT_MIN = 30
+MAX_ATTEMPTS        = 5
+LOCKOUT_SECONDS     = 300
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PRIVADO – helpers internos (prefixo _)
+# PRIVADO
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _salt() -> str:
@@ -32,17 +32,14 @@ def _salt() -> str:
 
 
 def _hash(password: str) -> str:
-    """SHA-256 com salt. Nunca armazena plain-text."""
     return hashlib.sha256(f"{_salt()}{password}".encode()).hexdigest()
 
 
 def _verify(plain: str, hashed: str) -> bool:
-    """Comparação resistente a timing-attack."""
     return hmac.compare_digest(_hash(plain), hashed)
 
 
 def _load_users() -> dict:
-    """Lê usuários do secrets.toml. Para a execução se a seção não existir."""
     try:
         return dict(st.secrets["users"])
     except KeyError:
@@ -86,7 +83,6 @@ def _logout():
 
 
 def _touch():
-    """Atualiza timestamp de última atividade."""
     st.session_state["_last_activity"] = time.time()
 
 
@@ -102,9 +98,6 @@ def _check_timeout():
 # ── Tela de login ─────────────────────────────────────────────────────────────
 
 def _render_login():
-    """Renderiza apenas a tela de login (CSS próprio, isolado)."""
-
-    # CSS exclusivo da tela de login — não interfere com o dashboard
     st.markdown("""
         <style>
         html, body, [data-testid="stAppViewContainer"] {
@@ -112,20 +105,6 @@ def _render_login():
             font-family: 'Segoe UI', sans-serif;
         }
         #MainMenu, footer, header { visibility: hidden; }
-
-        .login-wrap {
-            display: flex;
-            justify-content: center;
-            padding-top: 80px;
-        }
-        .login-card {
-            background: #ffffff;
-            border-radius: 14px;
-            padding: 44px 40px 36px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-            width: 100%;
-            max-width: 380px;
-        }
         .login-logo {
             text-align: center;
             font-size: 2rem;
@@ -166,11 +145,11 @@ def _render_login():
 
             if user_data and _verify(password, user_data["password_hash"]):
                 _reset_rate_limit()
-                st.session_state["_authenticated"]  = True
-                st.session_state["_username"]        = username
-                st.session_state["_nome"]            = user_data.get("nome", username)
-                st.session_state["_role"]            = user_data.get("role", "viewer")
-                st.session_state["_last_activity"]   = time.time()
+                st.session_state["_authenticated"] = True
+                st.session_state["_username"]      = username
+                st.session_state["_nome"]          = user_data.get("nome", username)
+                st.session_state["_role"]          = user_data.get("role", "viewer")
+                st.session_state["_last_activity"] = time.time()
                 st.rerun()
             else:
                 _fail()
@@ -182,15 +161,10 @@ def _render_login():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PÚBLICO – interface exposta ao main.py
+# PÚBLICO
 # ══════════════════════════════════════════════════════════════════════════════
 
 def require_login() -> None:
-    """
-    Chame no topo do main.py, antes de qualquer coisa.
-    Se não autenticado → mostra login e para com st.stop().
-    Se autenticado → verifica timeout e deixa continuar.
-    """
     if not st.session_state.get("_authenticated", False):
         _render_login()
         st.stop()
@@ -198,23 +172,14 @@ def require_login() -> None:
 
 
 def render_logout_button() -> None:
-    """
-    Adiciona rodapé de sessão + botão Sair na sidebar do dashboard.
-    Chame no main.py após require_login(), antes de rodar o app.
-    """
     nome = st.session_state.get("_nome", "Usuário")
     role = st.session_state.get("_role", "")
-
     st.sidebar.markdown(
         f"""
-        <div style="
-            margin-top: 24px;
-            padding-top: 12px;
-            border-top: 1px solid #2d7a40;
-        ">
-            <div style="font-size:0.68rem; opacity:0.65;">Logado como</div>
-            <div style="font-weight:700; font-size:0.95rem;">{nome}</div>
-            <div style="font-size:0.70rem; opacity:0.55; text-transform:uppercase;
+        <div style="margin-top:24px;padding-top:12px;border-top:1px solid #2d7a40;">
+            <div style="font-size:0.68rem;opacity:0.65;">Logado como</div>
+            <div style="font-weight:700;font-size:0.95rem;">{nome}</div>
+            <div style="font-size:0.70rem;opacity:0.55;text-transform:uppercase;
                         letter-spacing:0.5px;">{role}</div>
         </div>
         """,
@@ -226,7 +191,6 @@ def render_logout_button() -> None:
 
 
 def get_current_user() -> dict:
-    """Retorna dados do usuário logado (username, nome, role)."""
     return {
         "username": st.session_state.get("_username", ""),
         "nome":     st.session_state.get("_nome", ""),
