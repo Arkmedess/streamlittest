@@ -15,7 +15,7 @@ Execute:
 
 import streamlit as st
 
-from src.auth import require_login, render_logout_button
+from src.auth import get_current_user, require_login, render_logout_button
 from src.dashboard import setup_page
 from src.dashboard.components import (
     render_sidebar,
@@ -25,6 +25,8 @@ from src.dashboard.components import (
     render_painel_resumo,
 )
 from src.data import carregar_nfs, carregar_historico
+from src.data.supabase_client import replace_vendas
+from src.data.uploader import processar_csv
 
 # ── 1. Auth ───────────────────────────────────────────────────────────────────
 require_login()
@@ -34,13 +36,35 @@ setup_page()
 
 # ── 3. Logout na sidebar ──────────────────────────────────────────────────────
 render_logout_button()
+user = get_current_user()
 
 # ── 4. Dados ──────────────────────────────────────────────────────────────────
 df_nfs       = carregar_nfs()
 df_historico = carregar_historico()
+status_options = sorted(
+    set(df_nfs["Status"].dropna().astype(str)).union(
+        set(df_historico["Status"].dropna().astype(str))
+    )
+)
 
 # ── 5. Layout ─────────────────────────────────────────────────────────────────
-filtros = render_sidebar()
+filtros = render_sidebar(status_options)
+
+if user["role"] == "admin":
+    st.markdown('<div class="section-box">', unsafe_allow_html=True)
+    st.markdown('<span class="section-title">Upload de Arquivos</span>', unsafe_allow_html=True)
+    arquivo = st.file_uploader(
+        "Selecione um CSV consolidado",
+        type=["csv"],
+        label_visibility="collapsed",
+    )
+
+    if arquivo is not None and st.button("Importar para o banco", use_container_width=True):
+        df_upload = processar_csv(arquivo)
+        replace_vendas(df_upload)
+        st.success("Arquivo importado com sucesso.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown(
     '<p class="main-header">📋 Histórico de Compra do Clientes</p>',

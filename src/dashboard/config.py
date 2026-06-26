@@ -193,7 +193,7 @@ def setup_page() -> None:
         }
 
         /* ---------- hide streamlit chrome ---------- */
-        #MainMenu, footer, header { visibility: hidden; }
+        #MainMenu, footer { visibility: hidden; }
         </style>
         """,
         unsafe_allow_html=True,

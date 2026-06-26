@@ -6,10 +6,9 @@ Retorna um dict com os valores selecionados pelo usuário.
 """
 
 import streamlit as st
-from src.data.loader import STATUS
 
 
-def render_sidebar() -> dict:
+def render_sidebar(status_options: list[str]) -> dict:
     """
     Renderiza logo + filtros na sidebar.
 
@@ -44,7 +43,7 @@ def render_sidebar() -> dict:
         st.markdown("---")
         st.markdown("**Status**")
         status = st.multiselect(
-            "", options=STATUS, default=[],
+            "", options=status_options, default=[],
             label_visibility="collapsed",
             key="filtro_status",
         )
