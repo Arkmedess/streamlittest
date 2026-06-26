@@ -9,5 +9,6 @@ wheels/
 # Virtual environments
 .venv
 
+*.csv
 
 secrets.toml
