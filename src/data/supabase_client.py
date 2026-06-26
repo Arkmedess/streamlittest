@@ -64,6 +64,16 @@ def _preparar_df(df: pd.DataFrame, user_uuid: str) -> list[dict]:
     return df_envio.to_dict(orient="records")
 
 
+def fetch_vendas() -> pd.DataFrame:
+    """Busca todas as linhas da tabela `vendas` do usuário autenticado."""
+    client, _ = _autenticar()
+
+    response = client.table("vendas").select("*").execute()
+    dados = response.data or []
+
+    return pd.DataFrame(dados)
+
+
 # ── Interface pública ─────────────────────────────────────────────────────────
 
 def replace_vendas(df: pd.DataFrame, lote: int = 500) -> None:
