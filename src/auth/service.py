@@ -137,7 +137,7 @@ def _render_login():
         with st.form("_login_form", clear_on_submit=False):
             username  = st.text_input("👤 Usuário", placeholder="seu.usuario")
             password  = st.text_input("🔑 Senha",   placeholder="••••••••", type="password")
-            submitted = st.form_submit_button("Entrar", use_container_width=True)
+            submitted = st.form_submit_button("Entrar", width='stretch')
 
         if submitted:
             users     = _load_users()
@@ -185,7 +185,7 @@ def render_logout_button() -> None:
         """,
         unsafe_allow_html=True,
     )
-    if st.sidebar.button("🚪 Sair", use_container_width=True, key="_logout_btn"):
+    if st.sidebar.button("🚪 Sair", width='stretch', key="_logout_btn"):
         _logout()
         st.rerun()
 

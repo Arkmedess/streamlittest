@@ -1,0 +1,16 @@
+2026-06-26 15:27:01,755 INFO    __main__ Usuário atual: - (role=viewer)
+2026-06-26 15:27:02,872 INFO    src.data.supabase_client Autenticado no Supabase como arthur.silva@tpipinturas.com.br (bc637d17-d0c6-449f-9036-ce4e80ca07c5)
+2026-06-26 15:27:01,216 INFO    src.data.supabase_client fetch_vendas: recuperadas 1000 linhas
+2026-06-26 15:27:01,290 INFO    __main__ Base carregada: 1000 linhas
+2026-06-26 15:30:02,374 INFO    __main__ Usuário atual: - (role=viewer)
+2026-06-26 15:30:00,890 INFO    src.data.supabase_client Autenticado no Supabase como arthur.silva@tpipinturas.com.br (bc637d17-d0c6-449f-9036-ce4e80ca07c5)
+2026-06-26 15:30:01,461 INFO    src.data.supabase_client fetch_vendas: recuperadas 1000 linhas
+2026-06-26 15:30:01,577 INFO    __main__ Base carregada: 1000 linhas
+2026-06-26 15:32:49,010 INFO    __main__ Usuário atual: - (role=viewer)
+2026-06-26 15:32:49,814 INFO    src.data.supabase_client Autenticado no Supabase como arthur.silva@tpipinturas.com.br (bc637d17-d0c6-449f-9036-ce4e80ca07c5)
+2026-06-26 15:32:50,164 INFO    src.data.supabase_client fetch_vendas: recuperadas 1000 linhas
+2026-06-26 15:32:50,187 INFO    __main__ Base carregada: 1000 linhas
+2026-06-26 15:33:23,218 INFO    __main__ Usuário atual: - (role=viewer)
+2026-06-26 15:33:23,831 INFO    src.data.supabase_client Autenticado no Supabase como arthur.silva@tpipinturas.com.br (bc637d17-d0c6-449f-9036-ce4e80ca07c5)
+2026-06-26 15:33:24,455 INFO    src.data.supabase_client fetch_vendas: recuperadas 1000 linhas
+2026-06-26 15:33:24,496 INFO    __main__ Base carregada: 1000 linhas

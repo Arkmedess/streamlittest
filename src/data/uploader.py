@@ -7,6 +7,9 @@ from pydantic import ValidationError
 
 from .mapper import COLUMN_MAP, CSV_COLUMNS
 from .schema import Venda
+from src.logging import setup_logger
+
+logger = setup_logger(__name__)
 
 def _to_decimal(valor):
 
@@ -116,37 +119,38 @@ def _validate_schema(df):
             )
 
     if erros:
-
-        print("\n=== EXEMPLOS DE ERROS DE VALIDAÇÃO DO PYDANTIC ===")
-        # Mostra os 5 primeiros erros para entender o padrão
+        # Log a handful of validation errors to help debugging
+        logger.error("Foram encontradas %d erros de validação no CSV", len(erros))
         for i, erro in enumerate(erros[:5]):
-            print(f"Erro {i+1}: {erro}")
-        print("==================================================\n")
+            logger.error("Exemplo erro %d: %s", i + 1, erro)
 
-        raise ValueError(
-            f"Foram encontradas {len(erros)} linhas inválidas."
-        )
+        raise ValueError(f"Foram encontradas {len(erros)} linhas inválidas.")
 
     return pd.DataFrame(registros)
 
 def processar_csv(file):
+    logger.info("Processando CSV de upload")
 
     df = _read_csv(file)
-
     df = _rename_columns(df)
-
-    df = df[df['status'] == 'Faturado']
-
-    df['email_cliente'] = df['email_cliente'].astype(str).str.split(',').str[0].str.strip()
-
+    df = df[df["status"] == "Faturado"]
+    df["email_cliente"] = df["email_cliente"].astype(str).str.split(",").str[0].str.strip()
     df = _clean_data(df)
-
     df = _convert_types(df)
 
-    _validate_dataframe(df)
+    try:
+        _validate_dataframe(df)
+    except Exception as e:
+        logger.exception("Validação básica falhou: %s", e)
+        raise
 
-    df['cidade'] = df['cidade'].fillna("Não Informado").astype(str)
+    df["cidade"] = df["cidade"].fillna("Não Informado").astype(str)
 
-    df = _validate_schema(df)
+    try:
+        df = _validate_schema(df)
+    except Exception:
+        logger.exception("Validação de schema falhou durante processamento de CSV")
+        raise
 
+    logger.info("CSV processado com sucesso: %d linhas válidas", len(df))
     return df

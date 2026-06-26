@@ -9,9 +9,14 @@ Não faz chamadas ao Streamlit — retorna apenas strings HTML.
 def render_badge(status: str) -> str:
     """Retorna o HTML do badge colorido de status."""
     cls = {
-        "Ativo":    "badge-active",
-        "Inativo":  "badge-inactive",
-        "Pendente": "badge-pending",
+        "Ativo": "badge-active",
+        "Atendido": "badge-active",
+        "Recente": "badge-active",
+        "Faturado": "badge-active",
+        "Atenção": "badge-warning",
+        "Pendente": "badge-warning",
+        "Cancelado": "badge-inactive",
+        "Inativo": "badge-inactive",
     }.get(status, "badge-pending")
     return f'<span class="{cls}">{status}</span>'
 

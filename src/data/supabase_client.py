@@ -19,6 +19,10 @@ import pandas as pd
 import streamlit as st
 from supabase import Client, create_client
 
+from src.logging import setup_logger
+
+logger = setup_logger(__name__)
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -41,12 +45,14 @@ def _autenticar() -> tuple[Client, str]:
     )
 
     if not sessao.session or not sessao.session.access_token:
+        logger.error("Token JWT não obtido durante autenticação Supabase.")
         raise PermissionError("Token JWT não obtido. Verifique as credenciais.")
 
     if sessao.user is None:
+        logger.error("Usuário não retornado durante autenticação Supabase.")
         raise PermissionError("Usuário não retornado pelo Supabase.")
 
-    print(f"✅ Autenticado como: {sessao.user.email} ({sessao.user.id})")
+    logger.info("Autenticado no Supabase como %s (%s)", sessao.user.email, sessao.user.id)
     return client, sessao.user.id
 
 
@@ -68,10 +74,14 @@ def fetch_vendas() -> pd.DataFrame:
     """Busca todas as linhas da tabela `vendas` do usuário autenticado."""
     client, _ = _autenticar()
 
-    response = client.table("vendas").select("*").execute()
-    dados = response.data or []
-
-    return pd.DataFrame(dados)
+    try:
+        response = client.table("vendas").select("*").execute()
+        dados = response.data or []
+        logger.info("fetch_vendas: recuperadas %d linhas", len(dados))
+        return pd.DataFrame(dados)
+    except Exception as e:
+        logger.exception("Erro ao buscar vendas: %s", e)
+        raise
 
 
 # ── Interface pública ─────────────────────────────────────────────────────────
@@ -92,26 +102,26 @@ def replace_vendas(df: pd.DataFrame, lote: int = 500) -> None:
 
     # ── 1. Apaga tudo ─────────────────────────────────────────────────────────
     # neq("user_id", "") → condição sempre verdadeira para o RLS do usuário
-    print("🗑️  Limpando tabela vendas...")
+    logger.info("Iniciando replace_vendas: limpando tabela vendas para user %s", user_uuid)
     client.table("vendas").delete().eq("user_id", user_uuid).execute()
-    print("✅ Tabela limpa.")
+    logger.info("Tabela limpa para user %s", user_uuid)
 
     # ── 2. Insere o DataFrame inteiro ─────────────────────────────────────────
     dados    = _preparar_df(df, user_uuid)
     total    = len(dados)
     enviados = 0
 
-    print(f"📤 Inserindo {total} linhas em lotes de {lote}...")
+    logger.info("Inserindo %d linhas em lotes de %d", total, lote)
 
     try:
         for lote_atual in _chunks(dados, lote):
             client.table("vendas").insert(lote_atual).execute()
             enviados += len(lote_atual)
-            print(f"  → {enviados}/{total}")
+            logger.info("replace_vendas progress: %d/%d", enviados, total)
 
-        print(f"✅ Replace concluído: {total} linhas no banco.")
+        logger.info("Replace concluído: %d linhas no banco para user %s", total, user_uuid)
 
     except Exception as e:
-        print(f"❌ Erro após {enviados}/{total} linhas: {e}")
-        print("⚠️  A tabela foi limpa mas o insert falhou. Rode novamente.")
+        logger.exception("Erro durante replace_vendas após %d/%d linhas: %s", enviados, total, e)
+        # keep original behavior but log details
         raise
